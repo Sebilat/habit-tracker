@@ -1,9 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Habit Tracker</title>
-</head>
-<body>
-    <h1>Welcome to your Habit Tracker!</h1>
-</body>
-</html>
+{% extends "tracker/base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h2>Welcome to your Habit Tracker!</h2>
+
+{% if user.is_authenticated %}
+    <p>You are logged in as <strong>{{ user.username }}</strong></p>
+{% else %}
+    <p>You are not logged in</p>
+{% endif %}
+{% endblock %}
