@@ -1,0 +1,53 @@
+{% extends "tracker/base.html" %}
+
+{% block title %}Welcome Survey{% endblock %}
+
+{% block content %}
+<h2>Tell us about yourself</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <!--Display from errors-->
+    {% if form.errors %}
+        <ul style="color:red;">
+        {% for field in form %}
+            {% for error in field.errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+
+    <!--Render each field manually-->
+    <!--User's nickname-->
+    <label>Nickname:</label><br>
+    {{ form.nickname }}<br><br>
+
+    <!-- Habit categories-->
+    <label>What areas do you want to grow in?</label><br>
+    {{ form.selected_categories }}<br><br>
+
+    <!-- Number of habits -->
+    <label>How many habits do you want to track per day?</label><br>
+    {{ form.num_habits }}<br><br>
+
+    <!-- Dashboard style -->
+    <label>How would you like your dashboard to look?</label>
+    {{ form.dashboard_style }}<br><br>
+
+    <!-- Focus preference -->
+    <label>When you are feeling unmotivated, what helps you focus best?</label>
+    {{ form.focus_preference }}<br><br>
+
+    <!--Work style-->
+    <label>How do you prefer to work?</label><br>
+    {{ form.work_style }}<br><br>
+
+    <button type="submit">Continue</button>
+
+</form>
+{% endblock %}
