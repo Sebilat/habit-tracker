@@ -1,0 +1,60 @@
+{% extends "tracker/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2>Welcome, 
+    {% if profile and profile.nickname %}
+        {{ profile.nickname }}
+    {% else %}
+        {{ user.username }}
+    {% endif %}
+</h2>
+<h3>Today's Tasks</h3>
+
+<form method="POST">
+    {% csrf_token %}
+    <ul>
+        {% for log in task_logs %}
+        <li>
+            <!-- Checkbox to mark task complete -->
+            <input type="checkbox" name="completed_{{ log.id }}" {% if log.completed %}checked{% endif %}>
+
+            <!-- Display habit name and task name -->
+            {{ log.task.habit.name }} - {{ log.task.name }}
+
+            <!--Optional task duration -->
+            {% if log.duration %}
+            ({{ log.duration }} min)
+            {% endif %}
+        </li>
+        {% empty %}
+        <li>No tasks for today!</li>
+        {% endfor %}
+    </ul>
+
+    <button type="submit">Save Changes</button>
+</form>
+<br>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <!-- Adding a task -->
+    <label>Task name:</label><br>
+    <br>
+    <input type="text" name="task_name" required><br><br>
+
+    <!-- Selecting a habit -->
+    <label>Select habit:</label>
+    <select name="habit_id" required>
+        <option value="">--Choose a habit--</option>
+        {% for habit in user_habits %}
+            <option value="{{ habit.id }}">{{ habit.name }}</option>
+        {% endfor %}
+    </select><br><br>
+
+    <!-- Adding a task button -->
+    <button type="submit" name="add_task">Add Task</button>
+</form>
+{% endblock %}
