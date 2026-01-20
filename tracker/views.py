@@ -125,6 +125,18 @@ def dashboard(request):
                 log.completed = False
             log.save() # Save changes to database
 
+        # --- STREAK LOGIC ---
+        # Check if user completed all tasks today
+        if task_logs.exists(): # Only if there are tasks today
+            all_done = all(log.completed for log in task_logs)
+            if all_done:
+                # Increase streak by 1
+                profile.streak += 1
+            else:
+                # Reset streak if any task missed
+                profile.streak = 0
+            profile.save() # Save updated streak to database
+
         # Handle adding a new task
         task_name = request.POST.get("task_name")
         habit_id = request.POST.get("habit_id")
@@ -153,6 +165,7 @@ def dashboard(request):
         "task_logs": task_logs,
         "user_habits": user_habits,
         })
+
 
 
 

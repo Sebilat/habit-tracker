@@ -9,6 +9,7 @@ class UserProfile(models.Model):
     focus_preference = models.CharField(max_length=50)
     work_style = models.CharField(max_length=50)
     num_habits = models.PositiveIntegerField(default=3)
+    streak = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.user.username
