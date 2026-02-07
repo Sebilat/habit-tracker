@@ -1,4 +1,5 @@
 {% extends "tracker/base.html" %}
+{% load static %}
 
 {% block title %}Dashboard{% endblock %}
 
@@ -10,31 +11,65 @@
         {{ user.username }}
     {% endif %}
 </h2>
+<div id="streak-container">
+    {% if profile %}
+        <label>Streak: <span id="streak-count">{{ profile.streak }}</span></label>
+        <div id="streak-bar">
+            <div id="streak-progress" data-streak="{{ profile.streak|default:0 }}"></div>
+        </div>
+
+    {% else %}
+        <p>Streak info not available yet.</p>
+    {% endif %}
+</div>
+
+<h4>Last 7 Days</h4>
+
+<div class="weekly-calendar">
+    {% for day in weekly_data %}
+        <div class="day-container">
+            <div class="day-label">{{ day.day_label }}</div>
+            <div class="day-box {{ day.status }}"></div>
+        </div>
+    {% endfor %}
+</div>
+
 <h3>Today's Tasks</h3>
 
-<form method="POST">
-    {% csrf_token %}
-    <ul>
-        {% for log in task_logs %}
-        <li>
-            <!-- Checkbox to mark task complete -->
-            <input type="checkbox" name="completed_{{ log.id }}" {% if log.completed %}checked{% endif %}>
+<ul>
+    {% for log in task_logs %}
+    <li>
+        <!-- Checkbox to mark task complete -->
+        <input type="checkbox"
+                class="task-checkbox"
+                data-task-log-id="{{ log.id }}"
+                {% if log.completed %}checked{% endif %}>
 
-            <!-- Display habit name and task name -->
-            {{ log.task.habit.name }} - {{ log.task.name }}
+        <!-- Display habit name and task name -->
+        {{ log.task.habit.name }} - {{ log.task.name }}
 
-            <!--Optional task duration -->
-            {% if log.duration %}
-            ({{ log.duration }} min)
-            {% endif %}
-        </li>
-        {% empty %}
-        <li>No tasks for today!</li>
-        {% endfor %}
-    </ul>
+        <!--Optional task duration -->
+        {% if log.duration %}
+        ({{ log.duration }} min)
+        {% endif %}
 
-    <button type="submit">Save Changes</button>
-</form>
+        <!-- Delete Task Button -->
+         <form method="POST" action="{% url 'delete_task' log.task.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="delete-btn"> ❌ Delete Task</button>
+         </form>      
+    </li>
+    {% empty %}
+    <li>No tasks for today!</li>
+    {% endfor %}
+</ul>
+
+<!--Mark all tasks as done-->
+<button id="done-day-btn" type="button">
+    Done for the Day ✅
+</button>
+<p id="done-message"></p>
+
 <br>
 
 <form method="POST">
@@ -57,4 +92,8 @@
     <!-- Adding a task button -->
     <button type="submit" name="add_task">Add Task</button>
 </form>
+<script src="{% static 'tracker/dashboard.js' %}"></script>
 {% endblock %}
+
+
+

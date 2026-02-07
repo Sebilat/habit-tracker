@@ -1,12 +1,18 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+
+from datetime import date, timedelta
 
 from .models import UserProfile, TaskLog, Task, Habit
 
 from .forms import SurveyForm
+
+import json
 
 
 
@@ -99,7 +105,6 @@ def survey(request):
 
 @login_required
 def dashboard(request):
-
     # Get the user's habits
     user_habits = Habit.objects.filter(user=request.user)
     
@@ -109,33 +114,47 @@ def dashboard(request):
     except UserProfile.DoesNotExist:
         # return redirect("survey")
         profile = None
-    
+
     # Get today's date
     today = timezone.now().date()
+
+    # ----Weekly Tracking Data (last 7 days)
+    weekly_data = []
+
+    for i in range(6, -1, -1): # 6 days ago -> today
+        day = today - timedelta(days=i)
+        logs = TaskLog.objects.filter(user=request.user, date=day)
+
+        total_tasks = logs.count()
+        completed_tasks = logs.filter(completed=True).count()
+
+        # Tasks' Status
+        if total_tasks == 0:
+            status = "none" # no tasks at all
+
+        elif completed_tasks == 0:
+            status = "none" # tasks exist, none completed
+        
+        elif completed_tasks == total_tasks:
+            status = "complete" # all tasks complete
+
+        else:
+            status = "partial" # some tasks complete
+
+        weekly_data.append({
+            "date": day,
+            "day_label": day.strftime("%a"), # Mon, Tue, Wed
+            "status": status,
+            "total": total_tasks,
+            "completed": completed_tasks,
+        })
+
 
     # Get tasks for the logged-in user
     task_logs = TaskLog.objects.filter(user=request.user, date=today)
 
+    # Handle adding a new task only
     if request.method == "POST":
-        for log in task_logs:
-            # Check if the checkbox for this log was submitted
-            if f"completed_{log.id}" in request.POST:
-                log.completed = True
-            else:
-                log.completed = False
-            log.save() # Save changes to database
-
-        # --- STREAK LOGIC ---
-        # Check if user completed all tasks today
-        if task_logs.exists(): # Only if there are tasks today
-            all_done = all(log.completed for log in task_logs)
-            if all_done:
-                # Increase streak by 1
-                profile.streak += 1
-            else:
-                # Reset streak if any task missed
-                profile.streak = 0
-            profile.save() # Save updated streak to database
 
         # Handle adding a new task
         task_name = request.POST.get("task_name")
@@ -144,8 +163,10 @@ def dashboard(request):
         # Only create a task if both fields are filled 
         if task_name and habit_id:
             habit = Habit.objects.get(id=habit_id)
-            new_task = TaskLog.objects.create(
+
+            TaskLog.objects.create(
                 user=request.user,
+                date=today,
 
                 # Logs the task for today, so it shows up on the dashboard
                 task=Task.objects.create(
@@ -164,10 +185,96 @@ def dashboard(request):
         "profile": profile, 
         "task_logs": task_logs,
         "user_habits": user_habits,
+        "weekly_data": weekly_data,
+    })
+
+@login_required
+@require_POST
+def toggle_task(request):
+    data = json.loads(request.body)
+    task_log_id = data.get("task_log_id")
+
+    try:
+        task_log = TaskLog.objects.get(id=task_log_id, user=request.user)
+        task_log.completed = not task_log.completed
+        task_log.save()
+
+        return JsonResponse({
+            "completed": task_log.completed
         })
+    
+    except TaskLog.DoesNotExist:
+        return JsonResponse({"error": "Task not found"}, status=404)
+    
+@login_required
+def delete_task(request, task_id):
+    """
+    Deletes a Task (and its TaskLog) for the logged-in user.
+    """
 
+    try:
+        # Get the Task object that belongs to this user
+        task = Task.objects.get(id=task_id, user=request.user)
 
+        # Delete all tasks logs associated with this task
+        TaskLog.objects.filter(task=task, user=request.user).delete()
 
+        # Delete the Task itself
+        task.delete()
 
+        # Redirect back to dashboard
+        return redirect("dashboard")
+    
+    except Task.DoesNotExist:
+        # If the task does not exist, just redirect
+        return redirect("dashboard")
+
+@login_required
+@require_POST
+def complete_day(request):
+    """
+    Mark the day as completed if all tasks are done.
+    Increment the user's streak by 1.
+    """
+
+    today = timezone.now().date()
+    task_logs = TaskLog.objects.filter(user=request.user, date=today)
+
+    # Check if all tasks are completed
+    if not task_logs.exists():
+        return JsonResponse({
+            "success": False,
+            "message": "No tasks for today."
+        })
+    
+    if not all(log.completed for log in task_logs):
+        return JsonResponse({
+            "success": False,
+            "message": "Not all tasks are completed yet."
+        })
+    
+    profile = request.user.userprofile
+
+    # Prevent double streak increment same day
+    if profile.last_completed_day == today:
+        return JsonResponse({
+            "success": False,
+            "message": "You already completed today!"
+        })
+    
+    # If yesterday was completed, streak continues
+    if profile.last_completed_day == today - timedelta(days=1):
+        profile.streak += 1
+
+    else:
+        profile.streak = 1 # restart streak
+
+    profile.last_completed_day = today
+    profile.save()
+
+    return JsonResponse({
+        "success": True,
+        "streak": profile.streak
+    })
 
 

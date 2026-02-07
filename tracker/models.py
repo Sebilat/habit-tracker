@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -10,6 +11,7 @@ class UserProfile(models.Model):
     work_style = models.CharField(max_length=50)
     num_habits = models.PositiveIntegerField(default=3)
     streak = models.PositiveIntegerField(default=0)
+    last_completed_day = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.user.username
@@ -48,7 +50,7 @@ class TaskLog(models.Model):
     task = models.ForeignKey('Task', on_delete=models.CASCADE)
     completed = models.BooleanField(default=False)
     duration = models.PositiveIntegerField(null=True, blank=True) # minutes
-    date = models.DateField(auto_now_add=True)
+    date = models.DateField(default=timezone.now)
 
     def __str__(self):
         status = "Done" if self.completed else "Not done"

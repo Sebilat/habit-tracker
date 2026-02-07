@@ -1,0 +1,41 @@
+/* -----Weekly Calendar Logic----- */
+
+.weekly-calendar {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.day-container {
+    display: flex;
+    flex-direction: column; /* Label on top, box below */
+    align-items: center; /* center horizontally */
+}
+
+.day-label {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.day-box{
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+    background-color: #ccc;
+    transition: background-color 0.3s;
+}
+
+/* Status Colors */
+.day-box.complete {
+    background-color: #4CAF50; 
+}
+
+.day-box.partial {
+    background-color: #f3dc99;
+}
+
+.day-box.none {
+    background-color: #ccc;
+
+}
