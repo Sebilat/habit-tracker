@@ -1,0 +1,71 @@
+/* Shared dashboard styles */
+.dashboard {
+    min-height: 100vh;
+}
+
+/* MINIMAL */
+.dashboard.minimal {
+    background-color: #FDFBF7;
+    color: #222;
+    font-family: sans-serif;
+}
+
+.dashboard.minimal .card {
+    background: #1B2621;
+    border-radius: 6px;
+
+}
+
+/* COLORFUL */
+.dashboard.colorful {
+    background: linear-gradient(135deg, #ffecd2, #fcc8f0, #fcb69f);
+    color: #2b2b2b;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    animation: gradientShift 15s ease infinite;
+}
+
+.dashboard.colorful .card {
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 16px;
+}
+
+/*  GOAL-FOCUSED */
+.dashboard.goal.goal-school {
+    background: linear-gradient(150deg, #f1f3f5, #6CACE4, #a8d2d9);
+    color: #333334;
+    font-family: 'IBM Plex Sans', sans-serif;
+    animation: gradientShift 15s ease infinite;
+
+}
+
+.dashboard.goal.goal-work {
+    background: linear-gradient(150deg, #6CACE4, #f8f9fa);
+    color: #2d2e31;
+    font-family: 'Satoshi', sans-serif;
+    animation: gradientShift 15s ease infinite;
+}
+
+.dashboard.goal.goal-wellness {
+    background: linear-gradient(150deg, #f7f2ee, #d5f3e4, #f3f1f6);
+    color: #565252;
+    font-family: 'Helvetica Neue', sans-serif;
+}
+
+.dashboard.goal.goal-creativity {
+    background: linear-gradient(150deg, #f7a33d, #fcff5e, #fdf9f0);
+    color: #242222;
+    font-family: 'Helvetica Neue', sans-serif;
+}
+
+.dashboard.goal.goal-home {
+    background: linear-gradient(150deg, #cff8b9, #fffdd0);
+    color: #3f3d3d;
+    font-family: 'Helvetica Neue', sans-serif;
+}
+
+.dashboard.goal.card {
+    background: #1e293b;
+    border: 1px solid #38bdf8;
+    border-radius: 8px;
+}

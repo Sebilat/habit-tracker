@@ -93,8 +93,14 @@ def survey(request):
         form = SurveyForm(request.POST, instance=profile)
         if form.is_valid():
             user_profile = form.save(commit=False)
+
+            # Convert list -> comma-separated string
+            categories_list = form.cleaned_data["selected_categories"]
+            user_profile.selected_categories = ",".join(categories_list)
+
             user_profile.user = request.user
             user_profile.save()
+
             return redirect("dashboard") # Redirect to dashboard after submission
         
     else:
@@ -120,6 +126,34 @@ def dashboard(request):
 
     # ----Weekly Tracking Data (last 7 days)
     weekly_data = []
+
+    # Determine the goal_category for the body class
+    goal_category = request.session.get("goal_category")
+
+    if profile:
+        # Split selected_categories string into list 
+        if profile.selected_categories:
+            categories_list = profile.selected_categories.split(",")
+        else:
+            categories_list = []
+
+        # Flag to show "Change Goal Category" button only if multiple categories exist 
+        show_change_goal_btn = (
+            profile.dashboard_style == "goal"
+            and len(categories_list) > 1
+        )
+
+        # Flag to show "Change Goal Category" button only if multiple categories were selected 
+        if profile.dashboard_style == "goal" and not goal_category:
+            return redirect("select_goal_category")
+        
+        # Default to first category if none in session
+        if not goal_category and categories_list:
+            goal_category = categories_list[0]
+
+    else:
+        categories_list = []
+        show_change_goal_btn = False
 
     for i in range(6, -1, -1): # 6 days ago -> today
         day = today - timedelta(days=i)
@@ -186,6 +220,9 @@ def dashboard(request):
         "task_logs": task_logs,
         "user_habits": user_habits,
         "weekly_data": weekly_data,
+        "goal_category": goal_category,
+        "categories_list": categories_list,
+        "show_change_goal_btn": show_change_goal_btn,
     })
 
 @login_required
@@ -277,4 +314,25 @@ def complete_day(request):
         "streak": profile.streak
     })
 
+@login_required
+def select_goal_category(request):
+    profile = request.user.userprofile
 
+    # Get the list of categories 
+    categories = profile.selected_categories.split(",") if profile.selected_categories else []
+
+    if request.method == "POST":
+        selected = request.POST.get("category")
+        if selected in categories:
+            # Save the selected category in session
+            request.session["goal_category"] = selected
+            return redirect("dashboard")
+        
+    return render(request, "tracker/select_category.html", {
+        "categories": categories, 
+        "goal_category": request.session.get("goal_category"),
+    })
+
+def set_goal_category(request, category):
+    request.session["goal_category"] = category
+    return redirect("dashboard")

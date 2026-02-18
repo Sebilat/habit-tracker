@@ -5,8 +5,9 @@
     <meta charset="UTF-8">
     <title>{% block title %}Habit Tracker{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'tracker/style.css' %}">
+    <link rel="stylesheet" href="{% static 'tracker/dashboard.css' %}">
 </head>
-<body>
+<body class="{% if user.is_authenticated and user.userprofile %}dashboard {{ user.userprofile.dashboard_style }}{% if user.userprofile.dashboard_style == 'goal' and goal_category %} goal-{{ goal_category }}{% endif %}{% endif %}">
     <header>
         <h1>Habit Tracker</h1>
         <nav>

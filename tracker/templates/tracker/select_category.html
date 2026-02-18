@@ -1,0 +1,14 @@
+{% extends "tracker/base.html" %}
+
+{% block title %}Select Focus Category{% endblock %}
+
+{% block content %}
+<h2>Select a category to focus on today:</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    {% for cat in categories %}
+        <button type="submit" name="category" value="{{ cat }}">{{ cat|capfirst }}</button><br><br>
+    {% endfor %}
+</form>
+{% endblock %}

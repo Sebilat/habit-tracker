@@ -11,6 +11,18 @@
         {{ user.username }}
     {% endif %}
 </h2>
+
+{% if show_change_goal_btn %}
+    <form method="get" action="{% url 'select_goal_category' %}">
+        <button type="submit">
+            Change Goal Category 
+        </button>
+    </form>
+    <br>
+    <hr>
+    <br>
+{% endif %}
+
 <div id="streak-container">
     {% if profile %}
         <label>Streak: <span id="streak-count">{{ profile.streak }}</span></label>
@@ -92,6 +104,13 @@
     <!-- Adding a task button -->
     <button type="submit" name="add_task">Add Task</button>
 </form>
+
+{% if profile.selected_category|length > 1 %}
+    <form method="GET" action="{% url 'select_goal_category' %}">
+        <button type="submit">Change Focus Category</button>
+    </form>
+{% endif %}
+
 <script src="{% static 'tracker/dashboard.js' %}"></script>
 {% endblock %}
 

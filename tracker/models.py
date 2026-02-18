@@ -2,15 +2,74 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+CATEGORY_CHOICES = [
+    ("school", "School"),
+    ("wellness", "Wellness"),
+    ("work", "Work"),
+    ("creativity", "Creativty"),
+    ("home", "Home"),
+]
 class UserProfile(models.Model):
+    
+    DASHBOARD_CHOICES = [
+        ("minimal", "Minimal"),
+        ("colorful", "Colorful"),
+        ("goal", "Goal-Focused"),
+    ]
+
+    FOCUS_CHOICES = [
+        ("calm", "Calm visuals"),
+        ("bright", "Bright colors"),
+        ("minimal", "Minimal distractions"),
+        ("gentle", "Gentle animations"),
+    ]
+
+    WORK_STYLE_CHOICES = [
+        ("single", "One task at a time"),
+        ("pomodoro", "Short bursts (Pomodoro-style)"),
+        ("long", "Long focused sessions"),
+        ("free", "No strict structure"),
+    ]
+
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    
+    # Nickname
     nickname = models.CharField(max_length=50)
-    selected_categories = models.TextField()
-    dashboard_style = models.CharField(max_length=50)
-    focus_preference = models.CharField(max_length=50)
-    work_style = models.CharField(max_length=50)
+
+    # Multi-select categories
+    selected_categories = models.CharField(max_length=200, blank=False, default="")
+    
+    # Dashboard style (single choice)
+    dashboard_style = models.CharField(
+        max_length=50, 
+        choices=DASHBOARD_CHOICES,
+        default="minimal",
+        blank=False
+    )
+    
+    # Focus preference (single choice)
+    focus_preference = models.CharField(
+        max_length=50, 
+        choices=FOCUS_CHOICES,
+        default="calm",
+        blank=False
+    )
+    
+    # Work style (single choice)
+    work_style = models.CharField(
+        max_length=50, 
+        choices=WORK_STYLE_CHOICES,
+        default="one_task",
+        blank=False
+    )
+    
+    # Number of habits per day
     num_habits = models.PositiveIntegerField(default=3)
+    
+    # Optional: streak tracking
     streak = models.PositiveIntegerField(default=0)
+    
     last_completed_day = models.DateField(null=True, blank=True)
 
     def __str__(self):
