@@ -1,117 +1,138 @@
 {% extends "tracker/base.html" %}
 {% load static %}
 
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% endblock %}
+
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h2>Welcome, 
-    {% if profile and profile.nickname %}
-        {{ profile.nickname }}
-    {% else %}
-        {{ user.username }}
-    {% endif %}
-</h2>
-
-{% if show_change_goal_btn %}
-    <form method="get" action="{% url 'select_goal_category' %}">
-        <button type="submit">
-            Change Goal Category 
-        </button>
-    </form>
-    <br>
-    <hr>
-    <br>
-{% endif %}
-
-<div id="streak-container">
-    {% if profile %}
-        <label>Streak: <span id="streak-count">{{ profile.streak }}</span></label>
-        <div id="streak-bar">
-            <div id="streak-progress" data-streak="{{ profile.streak|default:0 }}"></div>
-        </div>
-
-    {% else %}
-        <p>Streak info not available yet.</p>
-    {% endif %}
+<div id="mood-env-container" style="display:none;">
+        <!--JS will populate this div with the mood environment-->
 </div>
 
-<h4>Last 7 Days</h4>
-
-<div class="weekly-calendar">
-    {% for day in weekly_data %}
-        <div class="day-container">
-            <div class="day-label">{{ day.day_label }}</div>
-            <div class="day-box {{ day.status }}"></div>
-        </div>
-    {% endfor %}
-</div>
-
-<h3>Today's Tasks</h3>
-
-<ul>
-    {% for log in task_logs %}
-    <li>
-        <!-- Checkbox to mark task complete -->
-        <input type="checkbox"
-                class="task-checkbox"
-                data-task-log-id="{{ log.id }}"
-                {% if log.completed %}checked{% endif %}>
-
-        <!-- Display habit name and task name -->
-        {{ log.task.habit.name }} - {{ log.task.name }}
-
-        <!--Optional task duration -->
-        {% if log.duration %}
-        ({{ log.duration }} min)
-        {% endif %}
-
-        <!-- Delete Task Button -->
-         <form method="POST" action="{% url 'delete_task' log.task.id %}" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="delete-btn"> ❌ Delete Task</button>
-         </form>      
-    </li>
-    {% empty %}
-    <li>No tasks for today!</li>
-    {% endfor %}
-</ul>
-
-<!--Mark all tasks as done-->
-<button id="done-day-btn" type="button">
-    Done for the Day ✅
-</button>
-<p id="done-message"></p>
-
-<br>
-
-<form method="POST">
-    {% csrf_token %}
-
-    <!-- Adding a task -->
-    <label>Task name:</label><br>
-    <br>
-    <input type="text" name="task_name" required><br><br>
-
-    <!-- Selecting a habit -->
-    <label>Select habit:</label>
-    <select name="habit_id" required>
-        <option value="">--Choose a habit--</option>
-        {% for habit in user_habits %}
-            <option value="{{ habit.id }}">{{ habit.name }}</option>
-        {% endfor %}
-    </select><br><br>
-
-    <!-- Adding a task button -->
-    <button type="submit" name="add_task">Add Task</button>
+<!--Global Mood-Based Environment Button-->
+<form id="mood-env-form">
+    <button type="button" id="mood-env-btn">Enter Focus Mode</button>
 </form>
 
-{% if profile.selected_category|length > 1 %}
-    <form method="GET" action="{% url 'select_goal_category' %}">
-        <button type="submit">Change Focus Category</button>
-    </form>
-{% endif %}
+<div id="main-dashboard-content">
 
-<script src="{% static 'tracker/dashboard.js' %}"></script>
+    <h2>Welcome, 
+        {% if profile and profile.nickname %}
+            {{ profile.nickname }}
+        {% else %}
+            {{ user.username }}
+        {% endif %}
+    </h2>
+    
+
+    {% if show_change_goal_btn %}
+        <form method="get" action="{% url 'select_goal_category' %}">
+            <button type="submit">
+                Change Goal Category 
+            </button>
+        </form>
+        <br>
+        <hr>
+        <br>
+    {% endif %}
+
+
+    <div id="streak-container">
+        <h2>Global Streak</h2>
+        {% if profile %}
+            <label>Streak: <span id="streak-count">{{ profile.streak }}</span></label>
+            <div id="streak-bar">
+                <div id="streak-progress" data-streak="{{ profile.streak|default:0 }}"></div>
+            </div>
+
+        {% else %}
+            <p>Streak info not available yet.</p>
+        {% endif %}
+    </div>
+
+    <h4>Last 7 Days</h4>
+
+    <div class="weekly-calendar">
+        {% for day in weekly_data %}
+            <div class="day-container">
+                <div class="day-label">{{ day.day_label }}</div>
+                <div class="day-box {{ day.status }}"></div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <h3>Today's Tasks</h3>
+
+    <ul>
+        {% for log in task_logs %}
+        <li>
+            <!-- Checkbox to mark task complete -->
+            <input type="checkbox"
+                    class="task-checkbox"
+                    data-task-log-id="{{ log.id }}"
+                    {% if log.completed %}checked{% endif %}>
+
+            <!-- Display habit name and task name -->
+            {{ log.task.habit.name }} - {{ log.task.name }}
+
+            <!--Optional task duration -->
+            {% if log.duration %}
+            ({{ log.duration }} min)
+            {% endif %}
+
+            <!-- Delete Task Button -->
+            <form method="POST" action="{% url 'delete_task' log.task.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="delete-btn"> ❌ Delete Task</button>
+            </form>      
+        </li>
+        {% empty %}
+        <li>No tasks for today!</li>
+        {% endfor %}
+    </ul>
+
+    <!--Mark all tasks as done-->
+    <button id="done-day-btn" type="button">
+        Done for the Day ✅
+    </button>
+    <p id="done-message"></p>
+
+    <br>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- Adding a task -->
+        <label>Task name:</label><br>
+        <br>
+        <input type="text" name="task_name" required><br><br>
+
+        <!-- Selecting a habit -->
+        <label>Select habit:</label>
+        <select name="habit_id" required>
+            <option value="">--Choose a habit--</option>
+            {% for habit in user_habits %}
+                <option value="{{ habit.id }}">{{ habit.name }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <!-- Adding a task button -->
+        <button type="submit" name="add_task">Add Task</button>
+    </form>
+
+    {% if profile.selected_category|length > 1 %}
+        <form method="GET" action="{% url 'select_goal_category' %}">
+            <button type="submit">Change Focus Category</button>
+        </form>
+    {% endif %}
+
+    <script src="{% static 'tracker/script.js' %}"></script>
+    <script src="{% static 'tracker/dashboard.js' %}"></script>
+
+</div>
 {% endblock %}
 
 

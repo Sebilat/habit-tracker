@@ -110,16 +110,30 @@ def survey(request):
     
 
 @login_required
-def dashboard(request):
-    # Get the user's habits
-    user_habits = Habit.objects.filter(user=request.user)
-    
+def dashboard(request):   
     # Get the user's profile, or redirect to survey if it does not exist
     try:
         profile = request.user.userprofile
     except UserProfile.DoesNotExist:
         # return redirect("survey")
         profile = None
+    
+    goal_category = request.session.get("goal_category")
+
+    if profile and profile.dashboard_style == "goal":
+
+        # If no category selected yet -> force selection page 
+        if not goal_category:
+            return redirect("select_goal_category")
+
+    # Filter user's habits based on category 
+    if profile and profile.dashboard_style == "goal" and goal_category:
+        user_habits = Habit.objects.filter(
+            user=request.user,
+            category__name__iexact=goal_category
+        )
+    else:
+        user_habits = Habit.objects.filter(user=request.user)
 
     # Get today's date
     today = timezone.now().date()
@@ -157,7 +171,13 @@ def dashboard(request):
 
     for i in range(6, -1, -1): # 6 days ago -> today
         day = today - timedelta(days=i)
-        logs = TaskLog.objects.filter(user=request.user, date=day)
+        if profile and profile.dashboard_style == "goal" and goal_category:
+            logs = TaskLog.objects.filter(
+                user=request.user, 
+                date=day,
+                task__habit__category__name__iexact=goal_category
+            )
+
 
         total_tasks = logs.count()
         completed_tasks = logs.filter(completed=True).count()
@@ -184,8 +204,19 @@ def dashboard(request):
         })
 
 
-    # Get tasks for the logged-in user
-    task_logs = TaskLog.objects.filter(user=request.user, date=today)
+    # Get tasks for the logged-in user 
+
+    # Only filter tasks based on category if the user's dashboard_style is "goal"
+    if profile and profile.dashboard_style == "goal" and goal_category:
+        task_logs = TaskLog.objects.filter(
+            user=request.user,
+            date=today,
+            task__habit__category__name__iexact=goal_category
+        )
+    
+    print("ACTIVE CATEGORY:", goal_category)
+    for log in task_logs:
+        print(log.task.name, "-", log.task.habit.category.name)
 
     # Handle adding a new task only
     if request.method == "POST":
@@ -212,8 +243,7 @@ def dashboard(request):
             ) 
 
         return redirect("dashboard") # Refresh page after update
-    
-
+        
     # Render the dashboard template and pass the profile (shows personalized info from survey)
     return render(request, "tracker/dashboard.html", {
         "profile": profile, 
@@ -224,6 +254,8 @@ def dashboard(request):
         "categories_list": categories_list,
         "show_change_goal_btn": show_change_goal_btn,
     })
+
+    
 
 @login_required
 @require_POST
