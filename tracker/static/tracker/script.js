@@ -31,6 +31,14 @@ const moodRecommendations = {
     }
 };
 
+// Timer variables 
+let timerDuration = 0;           // seconds left on timer  
+let timerInterval = null;        // will store setInterval reference
+let isRunning = false;           // track if timer is active
+let currentFormat = "pomodoro"; // default timer 
+let isWorkPhase = true;
+
+
 // Playlist categories 
 const playlistCategories = {
     "lofi-focus": {
@@ -86,7 +94,7 @@ document.getElementById("mood-env-container").style.display = "none";
             // Show mood environment container 
             moodEnvContainer.style.display = "block";
 
-            // Populate a simple test message 
+            // Display Mood Selection Screen 
             moodEnvContainer.innerHTML = `
                 <div id="welcome-screen" class="welcome-screen">
                     <h1>Welcome to your Mood-Based Environment</h1>
@@ -134,6 +142,14 @@ document.getElementById("mood-env-container").style.display = "none";
 
 function applyMood(mood) {
     const container = document.getElementById("mood-env-container");
+    const rec = moodRecommendations[mood];
+    const timerSound = document.getElementById("timer-sound");
+
+    const timerFormats = {
+        pomodoro: { work: 25*60, break: 5*60 },
+        micro: { work: 10*60, break: 2*60},
+        deep: { work: 50*60, break: 10*60}
+    };
 
     // Hide dashboard only
     document.getElementById("main-dashboard-content").style.display = "none";
@@ -145,18 +161,26 @@ function applyMood(mood) {
     // Reset previous class
     container.className = ""; // reset
     container.classList.add(`mood-${mood}`, "animated-bg");
-
-    const rec = moodRecommendations[mood];
-
+    
     // Add environment content 
     container.innerHTML = `
         <div id="environment-content" class="environment-content">
             <h1>${mood.charAt(0).toUpperCase() + mood.slice(1)} Mode</h1>
 
+            <div id="timer-container">
+                <h3>Timer</h3>
+                <div id="timer-display">00:00</div>               
+                <div id="timer-controls">
+                    <button id="start-btn">Start</button>
+                    <button id="pause-btn">Pause</button>
+                    <button id="reset-btn">Reset</button>
+                </div>
+            </div>
+
             <h3>Recommended Playlists</h3>
             <div id="playlist-cards"></div>
 
-            <button id="back-btn">Back to Dashboard</button>
+            <button id="back-btn">Back to Mood Selection</button>
         </div>
     `;
 
@@ -211,13 +235,122 @@ function applyMood(mood) {
         bubblesContainer.appendChild(circle);
         }
 
+    // ----Timer Logic-----
+    // Set preset timer based on mood
+    currentFormat = rec.timer.includes("micro") ? "micro" :
+                    rec.timer.includes("deep") ? "deep" : "pomodoro";
+    
+    // Set timer duration to the work phase of this format
+    timerDuration = timerFormats[currentFormat].work;
+
+    // Reset timer state 
+    isRunning = false;
+    isWorkPhase = true;
+
+    // Initialize timer variables
+    const timerDisplay = document.getElementById("timer-display"); 
+    const startBtn = document.getElementById("start-btn");
+    const pauseBtn = document.getElementById("pause-btn");
+    const resetBtn = document.getElementById("reset-btn");
+
+    // Show initial timer
+    timerDisplay.textContent = formatTime(timerDuration);
+
+    // Start button
+    startBtn.addEventListener("click", () => {
+        // Decrease the timer if there are still seconds left
+        if (!isRunning) {
+            isRunning = true;
+            timerInterval = setInterval(() => {
+                if (timerDuration > 0){
+                    timerDuration--;
+                    timerDisplay.textContent = formatTime(timerDuration);
+
+                } else {
+                    clearInterval(timerInterval);
+                    isRunning = false;
+
+                    // Alert user that time ended
+                    timerSound.play(); 
+                    alert("Time is up!");
+
+                    // Switch phase
+                    isWorkPhase = !isWorkPhase;
+                    timerDuration = isWorkPhase  ? timerFormats[currentFormat].work
+                                                : timerFormats[currentFormat].break;
+                    
+                    timerDisplay.textContent = formatTime(timerDuration);
+
+                }
+            }, 1000);
+        }
+    });
+
+    // Pause button
+    pauseBtn.addEventListener("click", () => {
+        if(isRunning) {
+            clearInterval(timerInterval);
+            isRunning = false;
+        }
+    });
+
+    // Reset button
+    resetBtn.addEventListener("click", () => {
+        clearInterval(timerInterval);
+        isRunning = false;
+        isWorkPhase = true;
+        timerDuration = timerFormats[currentFormat].work;
+        timerDisplay.textContent = formatTime(timerDuration);
+    });
+
+
     // Add a back button listerner
-    document.getElementById("back-btn").addEventListener("click", () => {
+   document.getElementById("back-btn").addEventListener("click", () => {
+
+    container.className = "";
+
+    // Rebuild mood selection screen 
+    container.innerHTML = `
+        <div id="welcome-screen" class="welcome-screen">
+            <h1>Welcome to your Mood-Based Environment</h1>
+            <p>Select your current mood:</p>
+                                     
+            <div class="mood-bubbles">
+                <div class="bubble" data-mood="stressed">😖 Stressed</div>
+                <div class="bubble" data-mood="sleepy">😴 Sleepy</div>
+                <div class="bubble" data-mood="motivated">💪 Motivated</div>
+                <div class="bubble" data-mood="overwhelmed">😵 Overwhelmed</div>
+                <div class="bubble" data-mood="calm">😌 Calm</div>
+            </div>
+
+            <button id="back-to-dashboard">Back to Dashboard</button>
+        </div>
+    `;
+
+    // Reattach bubble listeners
+    const bubbles = container.querySelectorAll(".bubble");
+    bubbles.forEach(bubble => {
+        bubble.addEventListener("click", () => {
+            const mood = bubble.dataset.mood;
+            applyMood(mood);
+        });
+    });
+
+    // Reattach dashboard back button
+    document.getElementById("back-to-dashboard").addEventListener("click", () => {
         container.style.display = "none";
         document.getElementById("main-dashboard-content").style.display = "block";
         document.getElementById("mood-env-form").style.display = "block";
-
-        // Remove mood class to reset 
-        container.className = "";
+    })
+    
     });
+
+
+}
+
+// Function to format seconds into MM:SS
+function formatTime(seconds) {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
 }
