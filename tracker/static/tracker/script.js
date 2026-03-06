@@ -77,9 +77,55 @@ const playlistCategories = {
 
 
 document.addEventListener("DOMContentLoaded", () => {
+
+    // -----Mood Environment Logic-----
     const globalBtn = document.getElementById("mood-env-btn");
     const moodEnvContainer = document.getElementById("mood-env-container");
-document.getElementById("mood-env-container").style.display = "none";
+
+    // -----Daily Report Page-----
+    const reportBtn = document.getElementById("daily-report-btn");
+    const returnBtn = document.getElementById("return-dashboard-btn");
+    const mainContent = document.getElementById("main-dashboard-content");
+
+    if (reportBtn) {
+        reportBtn.addEventListener("click", () => {
+            // Hide dashboard
+            mainContent.style.display = "none";
+
+            // Navigate to daily_report page
+            window.location.href = "/daily-report/";
+        })
+    }
+
+    // Return Back to Dashboard
+    if (returnBtn){
+        returnBtn.addEventListener("click", () => {
+            // Navigate back to your main dashboard page
+            window.location.href = "/dashboard/";
+        });
+    }
+
+
+    // Daily report progress bar
+    const fill = document.getElementById("progress-fill");
+    
+    if (fill){
+        const percentage = Number(fill.dataset.percentage || 0);
+
+        let width = 0;
+
+        const interval = setInterval(() => {
+            if (width >= percentage) {
+                clearInterval(interval);
+            } else {
+                width++;
+                fill.style.width = width + "%";
+            }
+        }, 10); // Speed of animation
+    }
+
+    // Hide mood environment container initially
+    document.getElementById("mood-env-container").style.display = "none";
 
 
     if (globalBtn && moodEnvContainer) {
@@ -113,6 +159,7 @@ document.getElementById("mood-env-container").style.display = "none";
                 </div>
             `;
 
+            // Attach Bubble click listeners
             const bubbles = moodEnvContainer.querySelectorAll(".bubble");
             bubbles.forEach(bubble => {
                 bubble.addEventListener("click", () => {
@@ -122,6 +169,7 @@ document.getElementById("mood-env-container").style.display = "none";
                 });
             });
 
+            // Attach dashboard back button listener 
             const backBtn = document.getElementById("back-to-dashboard");
 
             backBtn.addEventListener("click", () => {

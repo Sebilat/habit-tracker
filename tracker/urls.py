@@ -12,6 +12,7 @@ urlpatterns = [
     path("delete-task/<int:task_id>/", views.delete_task, name="delete_task"),
     path("complete-day/", views.complete_day, name="complete_day"),
     path("select-goal-category/", views.select_goal_category, name="select_goal_category"),
+    path("daily-report/", views.daily_report, name="daily_report"),
 
     path("set-goal-category/<str:category>/", views.set_goal_category, name="set_goal_category"),
 ]

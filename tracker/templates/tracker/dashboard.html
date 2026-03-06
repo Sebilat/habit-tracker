@@ -122,6 +122,10 @@
         <!-- Adding a task button -->
         <button type="submit" name="add_task">Add Task</button>
     </form>
+    <br>
+    
+    <!--Daily Report Button-->
+    <button id="daily-report-btn">View Daily Report</button>
 
     {% if profile.selected_category|length > 1 %}
         <form method="GET" action="{% url 'select_goal_category' %}">

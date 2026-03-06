@@ -1,0 +1,34 @@
+{% extends "tracker/base.html" %}
+
+{% block content %}
+
+<div class="daily-report-container">
+    <h1>Daily Report</h1>
+
+    <div class="report-stats">
+        <p><strong>Total Tasks:</strong>{{ total_tasks }}</p>
+        <p><strong>Completed:</strong>{{ completed_tasks }}</p>
+        <p><strong>Missed:</strong>{{ missed_tasks }}</p>
+    </div>
+
+    <div class="progress-section">
+        <h2>Completion: {{ completion_percentage }}%</h2>
+
+        <div class="progress-bar">
+            <div
+                class="progress-fill"
+                id="progress-fill"
+                data-percentage="{{ completion_percentage|default:0}}">
+            </div>
+        </div>
+        
+    </div>
+
+    <div class="feedback-message">
+        <p>{{ feedback_message }}</p>
+    </div>
+</div>
+
+<button id="return-dashboard-btn">Return to Dashboard</button>
+
+{% endblock %}

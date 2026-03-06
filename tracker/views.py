@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.db.models import QuerySet
 
 from datetime import date, timedelta
 
@@ -138,6 +139,10 @@ def dashboard(request):
     # Get today's date
     today = timezone.now().date()
 
+    # Initialize logs and task_logs to empty QuerySets
+    logs = TaskLog.objects.none()
+    task_logs = TaskLog.objects.none()
+
     # ----Weekly Tracking Data (last 7 days)
     weekly_data = []
 
@@ -171,11 +176,20 @@ def dashboard(request):
 
     for i in range(6, -1, -1): # 6 days ago -> today
         day = today - timedelta(days=i)
+
+        # Assign logs differently based on dashboard style
         if profile and profile.dashboard_style == "goal" and goal_category:
             logs = TaskLog.objects.filter(
                 user=request.user, 
                 date=day,
                 task__habit__category__name__iexact=goal_category
+            )
+        else:
+            # For non goal-based work-spaces,inlcude all tasks
+            logs = TaskLog.objects.filter(
+                user=request.user,
+                date=day,
+
             )
 
 
@@ -212,6 +226,11 @@ def dashboard(request):
             user=request.user,
             date=today,
             task__habit__category__name__iexact=goal_category
+        )
+    else:
+        task_logs = TaskLog.objects.filter(
+            user=request.user,
+            date=today
         )
     
     print("ACTIVE CATEGORY:", goal_category)
@@ -365,6 +384,55 @@ def select_goal_category(request):
         "goal_category": request.session.get("goal_category"),
     })
 
+
 def set_goal_category(request, category):
     request.session["goal_category"] = category
     return redirect("dashboard")
+
+
+def daily_report(request):
+    today = timezone.now().date()
+    completion_percentage = 0
+    completed_tasks = 0
+    missed_tasks = 0
+    total_tasks = 0
+    feedback_message = ""
+
+    logs_today = TaskLog.objects.filter(
+        user=request.user,
+        date=today
+    )
+
+    total_tasks = logs_today.count()
+    completed_tasks = logs_today.filter(completed=True).count()
+    missed_tasks = logs_today.filter(completed=False).count()
+
+    # Avoid division by zero
+    if total_tasks > 0:
+        completion_percentage = round((completed_tasks / total_tasks) * 100)
+    else:
+        completion_percentage = 0
+
+    # Add feedback based on completion percentage
+    if total_tasks == 0:
+        feedback_message = "You haven't logged any tasks today. Just start small. One intentional action can build momentum."
+
+    elif completion_percentage >= 80:
+        feedback_message = "Excellent progress today. You're building strong consistency!"
+    
+    elif completion_percentage > 0:
+        feedback_message = "Nice work, you made progress today. Reflect on what you were and were not able to achieve and improve tomorrow!"
+    
+    else:
+        feedback_message = "Today didn't go as planned. That is okay! Reset, refocus and try again tomorrow!"
+    
+    # Display of the total tasks, completed tasks, missed tasks, and completion percentage
+    context = {
+        "total_tasks": total_tasks,
+        "completed_tasks": completed_tasks,
+        "missed_tasks": missed_tasks,
+        "completion_percentage": completion_percentage,
+        "feedback_message": feedback_message,
+    }
+
+    return render(request, "tracker/daily_report.html", context)
